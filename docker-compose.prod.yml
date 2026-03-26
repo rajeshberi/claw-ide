@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+      - NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+      - MONGODB_URI=${MONGODB_URI}
+      - NEXT_PUBLIC_CONTAINER_SERVICE_URL=${CONTAINER_SERVICE_URL}
+      - CONTAINER_SERVICE_API_KEY=${CONTAINER_SERVICE_API_KEY}
+    depends_on:
+      - container-service
+    restart: unless-stopped
+    networks:
+      - clawnet
+
+  container-service:
+    build:
+      context: ./container-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - CONTAINER_SERVICE_API_KEY=${CONTAINER_SERVICE_API_KEY}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    networks:
+      - clawnet
+
+networks:
+  clawnet:
+    driver: bridge

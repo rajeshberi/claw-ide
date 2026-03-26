@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+      - NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+      - MONGODB_URI=mongodb://mongo:27017/clawide
+      - NEXT_PUBLIC_CONTAINER_SERVICE_URL=http://localhost:8000
+      - CONTAINER_SERVICE_API_KEY=dev-secret-key
+    depends_on:
+      - mongo
+      - container-service
+    volumes:
+      - ./web/src:/app/src
+    networks:
+      - clawnet
+
+  container-service:
+    build:
+      context: ./container-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/clawide
+      - CONTAINER_SERVICE_API_KEY=dev-secret-key
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - mongo
+    networks:
+      - clawnet
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - clawnet
+
+volumes:
+  mongo_data:
+
+networks:
+  clawnet:
+    driver: bridge
